@@ -1,6 +1,9 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+import pyperclip
+from colored import Fore, Style
+
 from assembler import assemble
 from factorio import generate_flasher_blueprint
 
@@ -19,7 +22,12 @@ def main():
         return
 
     factorio_blueprint = generate_flasher_blueprint(machine_code, label=fpu_file.name)
-    print(factorio_blueprint)
+    pyperclip.copy(factorio_blueprint)
+    print(
+        f"{Fore.green}Factorio blueprint generated{Style.reset}\n"
+        + f"{Fore.cyan}{Style.underline}{factorio_blueprint}{Style.reset}\n"
+        + f"{Fore.yellow}This has also been copied to your clipboard{Style.reset}"
+    )
 
 
 if __name__ == "__main__":

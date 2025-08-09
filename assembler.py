@@ -123,13 +123,12 @@ def assemble(file: Path) -> List[int]:
             else:
                 error_line = f"{Style.underline}{error_line}{Style.res_underline}"
 
-            error_msg = (
+            raise Exception(
                 f"{Fore.red}Error on line {line_num + 1}{Style.reset}\n"
                 + (f"  {line_num + 1 - 1}: {lines[line_num - 1].strip()}\n" if line_num > 0 else "")
                 + f"  {Fore.yellow}{line_num + 1}: {error_line}{Style.reset}\n"
                 + (f"  {line_num + 1 + 1}: {lines[line_num + 1].strip()}\n" if line_num < len(lines) - 1 else "")
                 + f"{Fore.red}{e}{Style.reset}\n"
             )
-            raise Exception(error_msg)
 
     return machine_code
