@@ -1,5 +1,6 @@
 import re
 from typing import Dict, List, Literal, TypedDict
+from pathlib import Path
 
 ParamType = Literal["register", "immediate", "address"]
 
@@ -132,3 +133,21 @@ def assemble_line(line: str) -> int | None:
     binary <<= INSTRUCTION_SIZE - instruction_length
 
     return binary
+
+def assemble(file:Path) -> List[int]:
+  with open(file, "r") as f:
+      lines = f.readlines()
+
+  machine_code:List[int] = []
+  for line_num, line in enumerate(lines):
+      try:
+        binary = assemble_line(line)
+        if binary is not None:
+          machine_code.append(binary)
+      except ValueError as e:
+          raise ValueError(f"Error on line {line_num}: {e}")
+      
+  return machine_code
+      
+fpu_file = Path("test.fpu")
+print(assemble(fpu_file))
