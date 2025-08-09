@@ -61,13 +61,14 @@ max_reg: int = (1 << PARAM_SIZE["register"]) - 1
 max_immediate: int = (1 << PARAM_SIZE["immediate"]) - 1
 max_address: int = (1 << PARAM_SIZE["address"]) - 1
 
+
 def parse_op(token: str) -> InstructionInfo:
     instr = token.strip().upper()
     if instr not in INSTRUCTIONS:
         raise ValueError(f"Unknown instruction: {token}")
-    
+
     return INSTRUCTIONS[instr]
-        
+
 
 def parse_register(token: str) -> int:
     match = re.fullmatch(r"R(\d+)", token.strip(), re.IGNORECASE)
@@ -77,21 +78,57 @@ def parse_register(token: str) -> int:
     reg_num = int(match.group(1))
     if not (0 <= reg_num <= max_reg):
         raise ValueError(f"Register out of range: {token}")
-    
+
     return reg_num
 
 
 def parse_immediate(token: str) -> int:
-    val = int(token, 0) # auto-detect binary/hex
+    val = int(token, 0)  # auto-detect binary/hex
     if not (0 <= val <= max_immediate):
         raise ValueError(f"Immediate out of range: {token}")
-    
+
     return val
 
 
 def parse_address(token: str) -> int:
-    val = int(token, 0) # auto-detect binary/hex
+    val = int(token, 0)  # auto-detect binary/hex
     if not (0 <= val <= max_address):
         raise ValueError(f"Address out of range: {token}")
-    
+
     return val
+
+
+def assemble_line(line: str) -> int | None:
+    line = line.split(";")[0].strip()  # remove comments
+    if not line:
+        return None
+
+    parts = re.split(r"[,\s]+", line)
+    instr = parts[0]
+    params = parts[1:]
+    instr_info = parse_op(instr)
+
+    if len(instr_info["params"]) != len(params):
+        raise ValueError(f"{instr} expects {len(instr_info["params"])} params, got {len(params)}")
+
+    binary = instr_info["opcode"]
+    instruction_length = OPCODE_SIZE
+
+    for param, ptype in zip(params, instr_info["params"]):
+        match ptype:
+            case "register":
+                reg_num = parse_register(param)
+                binary = (binary << PARAM_SIZE["register"]) | reg_num
+                instruction_length += PARAM_SIZE["register"]
+            case "immediate":
+                value = parse_immediate(param)
+                binary = (binary << PARAM_SIZE["immediate"]) | value
+                instruction_length += PARAM_SIZE["immediate"]
+            case "address":
+                addr = parse_address(param)
+                binary = (binary << PARAM_SIZE["address"]) | addr
+                instruction_length += PARAM_SIZE["address"]
+
+    binary <<= INSTRUCTION_SIZE - instruction_length
+
+    return binary
