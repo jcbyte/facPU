@@ -40,7 +40,7 @@ def parse_register(token: str) -> int:
 
 def parse_immediate(token: str) -> int:
     try:
-      val = int(token, 0)  # auto-detect binary/hex
+        val = int(token, 0)  # auto-detect binary/hex
     except ValueError:
         raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
 
@@ -52,10 +52,10 @@ def parse_immediate(token: str) -> int:
 
 def parse_address(token: str) -> int:
     try:
-      val = int(token, 0)  # auto-detect binary/hex
+        val = int(token, 0)  # auto-detect binary/hex
     except ValueError:
         raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
-    
+
     if not (0 <= val <= max_address):
         raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", token=token)
 
@@ -74,7 +74,6 @@ def assemble_line(line: str) -> int | None:
 
     if len(instr_info["params"]) != len(params):
         raise AssemblyError(f"Instruction {Style.underline}{instr}{Style.res_underline} expects {len(instr_info["params"])} params, but got {len(params)}")
-    
 
     binary = instr_info["opcode"]
     instruction_length = OPCODE_SIZE
