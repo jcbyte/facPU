@@ -3,8 +3,8 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
-                                 PARAM_SIZE, InstructionInfo)
+from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
+                                  PARAM_SIZE, InstructionInfo)
 
 max_reg: int = (1 << PARAM_SIZE["register"]) - 1
 max_immediate: int = (1 << PARAM_SIZE["immediate"]) - 1
@@ -162,7 +162,7 @@ def assemble(file: Path) -> list[int]:
         processed_lines, labels = preprocess(lines)
 
         machine_code: list[int] = []
-        for line_num, line in enumerate(processed_lines):
+        for line in processed_lines:
             binary = assemble_line(line, labels)
             if binary is not None:
                 machine_code.append(binary)

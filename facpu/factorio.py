@@ -1,10 +1,8 @@
-from typing import List
-
 from draftsman.blueprintable import Blueprint
 from draftsman.entity import ConstantCombinator
 
 
-def generate_flasher_blueprint(machine_code: List[int], label: str | None = None) -> str:
+def generate_flasher_blueprint(machine_code: list[int], label: str | None = None) -> str:
     blueprint = Blueprint()
     blueprint.label = label
 

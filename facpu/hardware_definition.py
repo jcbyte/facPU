@@ -1,18 +1,18 @@
-from typing import Dict, List, Literal, TypedDict
+from typing import Literal, TypedDict
 
 ParamType = Literal["register", "immediate", "address"]
 
 
 class InstructionInfo(TypedDict):
     opcode: int
-    params: List[ParamType]
+    params: list[ParamType]
 
 
 OPCODE_SIZE = 7
-PARAM_SIZE: Dict[ParamType, int] = {"register": 4, "immediate": 10, "address": 10}
+PARAM_SIZE: dict[ParamType, int] = {"register": 4, "immediate": 10, "address": 10}
 INSTRUCTION_SIZE = 31
 
-INSTRUCTIONS: Dict[str, InstructionInfo] = {
+INSTRUCTIONS: dict[str, InstructionInfo] = {
     "MOV": {"opcode": 0b0000000, "params": ["register", "register"]},
     "LI": {"opcode": 0b0000001, "params": ["register", "immediate"]},
     "LD": {"opcode": 0b0000010, "params": ["register", "address"]},

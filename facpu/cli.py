@@ -4,8 +4,8 @@ from pathlib import Path
 import pyperclip
 from colored import Fore, Style
 
-from assembler import assemble
-from factorio import generate_flasher_blueprint
+from .assembler import assemble
+from .factorio import generate_flasher_blueprint
 
 
 def main():

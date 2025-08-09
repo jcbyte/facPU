@@ -1,0 +1,16 @@
+annotated-types==0.7.0
+colored==2.3.1
+factorio-draftsman==2.0.3
+gitdb==4.0.12
+GitPython==3.1.45
+lupa==2.5
+pydantic==2.11.7
+pydantic_core==2.33.2
+pyperclip==1.9.0
+RapidFuzz==3.13.0
+setuptools==80.9.0
+smmap==5.0.2
+thefuzz==0.22.1
+typing==3.7.4.3
+typing-inspection==0.4.1
+typing_extensions==4.14.1
