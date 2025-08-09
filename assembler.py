@@ -135,6 +135,10 @@ def assemble_line(line: str) -> int | None:
     return binary
 
 def assemble(file:Path) -> List[int]:
+  if (not file.exists()):
+    raise ValueError(f"Assembly file '{file}' does not exist.")
+      
+
   with open(file, "r") as f:
       lines = f.readlines()
 
@@ -145,9 +149,13 @@ def assemble(file:Path) -> List[int]:
         if binary is not None:
           machine_code.append(binary)
       except ValueError as e:
-          raise ValueError(f"Error on line {line_num}: {e}")
+          error_msg = (
+                f"Error on line {line_num}:\n"
+                f"  {line.strip()}\n"
+                f"{type(e).__name__}: {e}"
+            )
+          raise ValueError(error_msg) from None
+
       
   return machine_code
-      
-fpu_file = Path("test.fpu")
-print(assemble(fpu_file))
+    
