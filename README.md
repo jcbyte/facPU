@@ -25,7 +25,7 @@ Including a corresponding assembler for writing and assembling programs.
 ## Assembly Language
 
 ```
-; just come facPU assembly
+; just some facPU assembly
 
 start:
   LI R1 2
@@ -225,3 +225,7 @@ Supporting labels
 - `DAT DATA`  
   **Description:** Define raw data `DATA` in memory.  
   **RTL:** Memory location ← `DATA`
+
+## Licence
+
+[GNU General Public License v3.0](LICENSE)

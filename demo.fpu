@@ -1,4 +1,4 @@
-; just come facPU assembly
+; just some facPU assembly
 
 start:
   LI R1 2
