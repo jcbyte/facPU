@@ -1,6 +1,8 @@
 import re
-from typing import Dict, List, Literal, TypedDict
 from pathlib import Path
+from typing import Dict, List, Literal, TypedDict
+
+from colored import Fore, Style
 
 ParamType = Literal["register", "immediate", "address"]
 
@@ -63,10 +65,16 @@ max_immediate: int = (1 << PARAM_SIZE["immediate"]) - 1
 max_address: int = (1 << PARAM_SIZE["address"]) - 1
 
 
+class AssemblyError(Exception):
+    def __init__(self, message: str, token: str | None = None):
+        super().__init__(message)
+        self.token = token
+
+
 def parse_op(token: str) -> InstructionInfo:
     instr = token.strip().upper()
     if instr not in INSTRUCTIONS:
-        raise ValueError(f"Unknown instruction: {token}")
+        raise AssemblyError(f"Instruction {Style.underline}{token}{Style.res_underline} unknown", token=token)
 
     return INSTRUCTIONS[instr]
 
@@ -74,27 +82,35 @@ def parse_op(token: str) -> InstructionInfo:
 def parse_register(token: str) -> int:
     match = re.fullmatch(r"R(\d+)", token.strip(), re.IGNORECASE)
     if not match:
-        raise ValueError(f"Invalid register syntax: {token}")
+        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
 
     reg_num = int(match.group(1))
     if not (0 <= reg_num <= max_reg):
-        raise ValueError(f"Register out of range: {token}")
+        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} out of range (max {max_reg})", token=token)
 
     return reg_num
 
 
 def parse_immediate(token: str) -> int:
-    val = int(token, 0)  # auto-detect binary/hex
+    try:
+      val = int(token, 0)  # auto-detect binary/hex
+    except ValueError:
+        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
+
     if not (0 <= val <= max_immediate):
-        raise ValueError(f"Immediate out of range: {token}")
+        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} out of range (max {max_immediate})", token=token)
 
     return val
 
 
 def parse_address(token: str) -> int:
-    val = int(token, 0)  # auto-detect binary/hex
+    try:
+      val = int(token, 0)  # auto-detect binary/hex
+    except ValueError:
+        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
+    
     if not (0 <= val <= max_address):
-        raise ValueError(f"Address out of range: {token}")
+        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", token=token)
 
     return val
 
@@ -110,7 +126,8 @@ def assemble_line(line: str) -> int | None:
     instr_info = parse_op(instr)
 
     if len(instr_info["params"]) != len(params):
-        raise ValueError(f"{instr} expects {len(instr_info["params"])} params, got {len(params)}")
+        raise AssemblyError(f"Instruction {Style.underline}{instr}{Style.res_underline} expects {len(instr_info["params"])} params, but got {len(params)}")
+    
 
     binary = instr_info["opcode"]
     instruction_length = OPCODE_SIZE
@@ -134,28 +151,39 @@ def assemble_line(line: str) -> int | None:
 
     return binary
 
-def assemble(file:Path) -> List[int]:
-  if (not file.exists()):
-    raise ValueError(f"Assembly file '{file}' does not exist.")
-      
 
-  with open(file, "r") as f:
-      lines = f.readlines()
+def assemble(file: Path) -> List[int]:
+    if not file.exists():
+        raise ValueError(f"{Fore.red}File {Style.underline}{file}{Style.res_underline} cannot be found{Style.reset}")
 
-  machine_code:List[int] = []
-  for line_num, line in enumerate(lines):
-      try:
-        binary = assemble_line(line)
-        if binary is not None:
-          machine_code.append(binary)
-      except ValueError as e:
-          error_msg = (
-                f"Error on line {line_num}:\n"
-                f"  {line.strip()}\n"
-                f"{type(e).__name__}: {e}"
+    with open(file, "r") as f:
+        lines = f.readlines()
+
+    machine_code: List[int] = []
+    for line_num, line in enumerate(lines):
+        try:
+            binary = assemble_line(line)
+            if binary is not None:
+                machine_code.append(binary)
+        except AssemblyError as e:
+            error_line = line.strip()
+            if e.token:
+                token_index = error_line.find(e.token)
+                error_line = (
+                    f"{error_line[:token_index]}"
+                    f"{Style.underline}{error_line[token_index:token_index+len(e.token)]}{Style.res_underline}"
+                    f"{error_line[token_index+len(e.token):]}"
+                )
+            else:
+                error_line = f"{Style.underline}{error_line}{Style.res_underline}"
+
+            error_msg = (
+                f"{Fore.red}Error on line {line_num + 1}{Style.reset}\n"
+                + (f"  {line_num + 1 - 1}: {lines[line_num - 1].strip()}\n" if line_num > 0 else "")
+                + f"  {Fore.yellow}{line_num + 1}: {error_line}{Style.reset}\n"
+                + (f"  {line_num + 1 + 1}: {lines[line_num + 1].strip()}\n" if line_num < len(lines) - 1 else "")
+                + f"{Fore.red}{e}{Style.reset}\n"
             )
-          raise ValueError(error_msg) from None
+            raise Exception(error_msg)
 
-      
-  return machine_code
-    
+    return machine_code

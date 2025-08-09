@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
+
 from assembler import assemble
+
 
 def main():
     parser = ArgumentParser(description="facPU assembler")
@@ -11,7 +13,7 @@ def main():
     fpu_file = Path(args.filename)
     try:
       machine_code = assemble(fpu_file)
-    except ValueError as e:
+    except Exception as e:
         print(e)
         return
 
