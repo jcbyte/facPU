@@ -3,12 +3,13 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
-                                  PARAM_SIZE, InstructionInfo)
+from .assembler_instructions import ASSEMBLER_PSEUDO_INSTRUCTIONS, PseudoInstruction
+from .hardware_definition import INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE, PARAM_SIZE, InstructionInfo
 
-max_reg: int = (1 << PARAM_SIZE["register"]) - 1
-max_immediate: int = (1 << PARAM_SIZE["immediate"]) - 1
-max_address: int = (1 << PARAM_SIZE["address"]) - 1
+MAX_REG: int = (1 << PARAM_SIZE["register"]) - 1
+MAX_IMMEDIATE: int = (1 << PARAM_SIZE["immediate"]) - 1
+MAX_ADDRESS: int = (1 << PARAM_SIZE["address"]) - 1
+MAX_BINARY: int = (1 << INSTRUCTION_SIZE) - 1
 
 
 class AssemblyError(Exception):
@@ -38,12 +39,16 @@ class AssemblyError(Exception):
         )
 
 
-def parse_op(token: str, line: int) -> InstructionInfo:
+def parse_op(token: str, line: int) -> InstructionInfo | PseudoInstruction:
     instr = token.strip().upper()
-    if instr not in INSTRUCTIONS:
-        raise AssemblyError(f"Instruction {Style.underline}{token}{Style.res_underline} unknown", line, token=token)
 
-    return INSTRUCTIONS[instr]
+    if instr in INSTRUCTIONS:
+        return INSTRUCTIONS[instr]
+
+    if instr in ASSEMBLER_PSEUDO_INSTRUCTIONS:
+        return ASSEMBLER_PSEUDO_INSTRUCTIONS[instr]
+
+    raise AssemblyError(f"Instruction {Style.underline}{token}{Style.res_underline} unknown", line, token=token)
 
 
 def parse_register(token: str, line: int) -> int:
@@ -52,8 +57,8 @@ def parse_register(token: str, line: int) -> int:
         raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
     reg_num = int(match.group(1))
-    if not (0 <= reg_num <= max_reg):
-        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} out of range (max {max_reg})", line, token=token)
+    if not (0 <= reg_num <= MAX_REG):
+        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} out of range (max {MAX_REG})", line, token=token)
 
     return reg_num
 
@@ -64,8 +69,8 @@ def parse_immediate(token: str, line: int) -> int:
     except ValueError:
         raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
-    if not (0 <= val <= max_immediate):
-        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} out of range (max {max_immediate})", line, token=token)
+    if not (0 <= val <= MAX_IMMEDIATE):
+        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} out of range (max {MAX_IMMEDIATE})", line, token=token)
 
     return val
 
@@ -79,8 +84,8 @@ def parse_address(token: str, labels: dict[str, int], line: int) -> int:
         except ValueError:
             raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
-    if not (0 <= val <= max_address):
-        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", line, token=token)
+    if not (0 <= val <= MAX_ADDRESS):
+        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {MAX_ADDRESS})", line, token=token)
 
     return val
 
@@ -123,30 +128,36 @@ def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int | None:
     parts = re.split(r"[,\s]+", content)
     instr = parts[0]
     params = parts[1:]
+
     instr_info = parse_op(instr, line_no)
+    is_pseudo_instr = isinstance(instr_info, PseudoInstruction)
 
-    if len(instr_info["params"]) != len(params):
-        raise AssemblyError(f"Instruction {Style.underline}{instr}{Style.res_underline} expects {len(instr_info["params"])} params, but got {len(params)}", line_no)
+    expected_params = instr_info.get_expected_parameters() if is_pseudo_instr else len(instr_info["params"])
+    if expected_params != len(params):
+        raise AssemblyError(f"Instruction {Style.underline}{instr}{Style.res_underline} expects {expected_params} params, but got {len(params)}", line_no)
 
-    binary = instr_info["opcode"]
-    instruction_length = OPCODE_SIZE
+    if is_pseudo_instr:
+        binary = instr_info.func(*params, line_no)
+    else:
+        binary = instr_info["opcode"]
+        instruction_length = OPCODE_SIZE
 
-    for param, ptype in zip(params, instr_info["params"]):
-        match ptype:
-            case "register":
-                reg_num = parse_register(param, line_no)
-                binary = (binary << PARAM_SIZE["register"]) | reg_num
-                instruction_length += PARAM_SIZE["register"]
-            case "immediate":
-                value = parse_immediate(param, line_no)
-                binary = (binary << PARAM_SIZE["immediate"]) | value
-                instruction_length += PARAM_SIZE["immediate"]
-            case "address":
-                addr = parse_address(param, labels, line_no)
-                binary = (binary << PARAM_SIZE["address"]) | addr
-                instruction_length += PARAM_SIZE["address"]
+        for param, ptype in zip(params, instr_info["params"]):
+            match ptype:
+                case "register":
+                    reg_num = parse_register(param, line_no)
+                    binary = (binary << PARAM_SIZE["register"]) | reg_num
+                    instruction_length += PARAM_SIZE["register"]
+                case "immediate":
+                    value = parse_immediate(param, line_no)
+                    binary = (binary << PARAM_SIZE["immediate"]) | value
+                    instruction_length += PARAM_SIZE["immediate"]
+                case "address":
+                    addr = parse_address(param, labels, line_no)
+                    binary = (binary << PARAM_SIZE["address"]) | addr
+                    instruction_length += PARAM_SIZE["address"]
 
-    binary <<= INSTRUCTION_SIZE - instruction_length
+        binary <<= INSTRUCTION_SIZE - instruction_length
 
     return binary
 
