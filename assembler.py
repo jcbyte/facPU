@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-from typing import List
 
 from colored import Fore, Style
 
@@ -50,11 +49,14 @@ def parse_immediate(token: str) -> int:
     return val
 
 
-def parse_address(token: str) -> int:
-    try:
-        val = int(token, 0)  # auto-detect binary/hex
-    except ValueError:
-        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
+def parse_address(token: str, labels: dict[str, int]) -> int:
+    val = labels.get(token)
+
+    if val is None:
+        try:
+            val = int(token, 0)  # auto-detect binary/hex
+        except ValueError:
+            raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", token=token)
 
     if not (0 <= val <= max_address):
         raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", token=token)
@@ -62,8 +64,36 @@ def parse_address(token: str) -> int:
     return val
 
 
-def assemble_line(line: str) -> int | None:
-    line = line.split(";")[0].strip()  # remove comments
+# removes comments
+# identifies and removes labels
+def preprocess(lines: list[str]) -> tuple[list[str], dict[str, int]]:
+    processed_lines: list[str] = []
+    address: int = 0
+    labels: dict[str, int] = {}
+    for line in lines:
+        clean_line = line.split(";")[0].strip()  # remove comments
+
+        if not clean_line:
+            continue
+
+        found_labels = re.findall(r"([^\s]+):", clean_line)
+        if found_labels:
+            for label in found_labels:
+                if label in labels:
+                    raise AssemblyError(f"Duplicate label {Style.underline}{label}:{Style.res_underline} found", token=f"{label}:")
+                labels.update({label: address})
+            clean_line = re.sub(r"[^\s]+:", "", clean_line).strip()
+
+            if not clean_line:
+                continue
+
+        processed_lines.append(clean_line)
+        address += 1
+
+    return processed_lines, labels
+
+
+def assemble_line(line: str, labels: dict[str, int]) -> int | None:
     if not line:
         return None
 
@@ -89,7 +119,7 @@ def assemble_line(line: str) -> int | None:
                 binary = (binary << PARAM_SIZE["immediate"]) | value
                 instruction_length += PARAM_SIZE["immediate"]
             case "address":
-                addr = parse_address(param)
+                addr = parse_address(param, labels)
                 binary = (binary << PARAM_SIZE["address"]) | addr
                 instruction_length += PARAM_SIZE["address"]
 
@@ -98,17 +128,21 @@ def assemble_line(line: str) -> int | None:
     return binary
 
 
-def assemble(file: Path) -> List[int]:
+def assemble(file: Path) -> list[int]:
     if not file.exists():
-        raise ValueError(f"{Fore.red}File {Style.underline}{file}{Style.res_underline} cannot be found{Style.reset}")
+        raise Exception(f"{Fore.red}File {Style.underline}{file}{Style.res_underline} cannot be found{Style.reset}")
 
     with open(file, "r") as f:
         lines = f.readlines()
 
-    machine_code: List[int] = []
-    for line_num, line in enumerate(lines):
+    processed_lines, labels = preprocess(lines)
+    # todo show error better (assembly error having exceptions?)
+    # todo og line numbers now broken with preprocessor
+
+    machine_code: list[int] = []
+    for line_num, line in enumerate(processed_lines):
         try:
-            binary = assemble_line(line)
+            binary = assemble_line(line, labels)
             if binary is not None:
                 machine_code.append(binary)
         except AssemblyError as e:
