@@ -1,10 +1,13 @@
+import re
 from typing import Dict, List, Literal, TypedDict
 
 ParamType = Literal["register", "immediate", "address"]
 
+
 class InstructionInfo(TypedDict):
     opcode: int
     params: List[ParamType]
+
 
 OPCODE_SIZE = 7
 PARAM_SIZE: Dict[ParamType, int] = {"register": 4, "immediate": 10, "address": 10}
@@ -53,3 +56,42 @@ INSTRUCTIONS: Dict[str, InstructionInfo] = {
     "ORI": {"opcode": 0b0111001, "params": ["register", "register", "immediate"]},
     "XORI": {"opcode": 0b0111010, "params": ["register", "register", "immediate"]},
 }
+
+max_reg: int = (1 << PARAM_SIZE["register"]) - 1
+max_immediate: int = (1 << PARAM_SIZE["immediate"]) - 1
+max_address: int = (1 << PARAM_SIZE["address"]) - 1
+
+def parse_op(token: str) -> InstructionInfo:
+    instr = token.strip().upper()
+    if instr not in INSTRUCTIONS:
+        raise ValueError(f"Unknown instruction: {token}")
+    
+    return INSTRUCTIONS[instr]
+        
+
+def parse_register(token: str) -> int:
+    match = re.fullmatch(r"R(\d+)", token.strip(), re.IGNORECASE)
+    if not match:
+        raise ValueError(f"Invalid register syntax: {token}")
+
+    reg_num = int(match.group(1))
+    if not (0 <= reg_num <= max_reg):
+        raise ValueError(f"Register out of range: {token}")
+    
+    return reg_num
+
+
+def parse_immediate(token: str) -> int:
+    val = int(token, 0) # auto-detect binary/hex
+    if not (0 <= val <= max_immediate):
+        raise ValueError(f"Immediate out of range: {token}")
+    
+    return val
+
+
+def parse_address(token: str) -> int:
+    val = int(token, 0) # auto-detect binary/hex
+    if not (0 <= val <= max_address):
+        raise ValueError(f"Address out of range: {token}")
+    
+    return val
