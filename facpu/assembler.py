@@ -94,6 +94,7 @@ def parse_address(token: str, labels: dict[str, int], line: int) -> int:
 
 # removes comments
 # identifies and removes labels
+# aliases commands
 def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]:
     processed_lines: list[tuple[int, str]] = []
     address: int = 0

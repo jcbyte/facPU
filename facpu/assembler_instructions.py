@@ -20,6 +20,7 @@ ALIASED_INSTRUCTIONS = {
     "OR ": ["OR /R", "OR /I"],
     "XOR": ["XOR/R", "XOR/I"],
     "GDS": ["GDS/II", "GDS/IR", "GDS/RI", "GDS/RR"],
+    "GDSA": ["GDSA/II", "GDSA/IR", "GDSA/RI", "GDSA/RR"],
 }
 
 
