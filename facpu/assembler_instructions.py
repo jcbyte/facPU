@@ -16,15 +16,17 @@ class PseudoInstruction:
 
 
 def data_instr(data: str, line: int) -> int:
-    from .assembler import MAX_BINARY, AssemblyError
-    
+    from .assembler import AssemblyError
+    from .hardware_definition import INSTRUCTION_SIZE
+
     try:
         val = int(data, 0)  # auto-detect binary/hex
     except ValueError:
         raise AssemblyError(f"Data value {Style.underline}{data}{Style.res_underline} has invalid syntax", line, token=data)
 
-    if not (0 <= val <= MAX_BINARY):
-        raise AssemblyError(f"Data value {Style.underline}{data}{Style.res_underline} out of range (max {MAX_BINARY})", line, token=data)
+    max_binary: int = (1 << INSTRUCTION_SIZE) - 1
+    if not (0 <= val <= max_binary):
+        raise AssemblyError(f"Data value {Style.underline}{data}{Style.res_underline} out of range (max {max_binary})", line, token=data)
 
     return val
 

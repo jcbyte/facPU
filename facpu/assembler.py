@@ -3,13 +3,10 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from .assembler_instructions import ASSEMBLER_PSEUDO_INSTRUCTIONS, PseudoInstruction
-from .hardware_definition import INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE, PARAM_SIZE, InstructionInfo
-
-MAX_REG: int = (1 << PARAM_SIZE["register"]) - 1
-MAX_IMMEDIATE: int = (1 << PARAM_SIZE["immediate"]) - 1
-MAX_ADDRESS: int = (1 << PARAM_SIZE["address"]) - 1
-MAX_BINARY: int = (1 << INSTRUCTION_SIZE) - 1
+from .assembler_instructions import (ASSEMBLER_PSEUDO_INSTRUCTIONS,
+                                     PseudoInstruction)
+from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
+                                  PARAM_SIZE, InstructionInfo, ParamType)
 
 
 class AssemblyError(Exception):
@@ -56,21 +53,24 @@ def parse_register(token: str, line: int) -> int:
     if not match:
         raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
+    max_reg: int = (1 << PARAM_SIZE["reg"]) - 1
+
     reg_num = int(match.group(1))
-    if not (0 <= reg_num <= MAX_REG):
-        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} out of range (max {MAX_REG})", line, token=token)
+    if not (0 <= reg_num <= max_reg):
+        raise AssemblyError(f"Register {Style.underline}{token}{Style.res_underline} out of range (max {max_reg})", line, token=token)
 
     return reg_num
 
 
-def parse_immediate(token: str, line: int) -> int:
+def parse_immediate(type: ParamType, token: str, line: int) -> int:
     try:
         val = int(token, 0)  # auto-detect binary/hex
     except ValueError:
         raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
-    if not (0 <= val <= MAX_IMMEDIATE):
-        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} out of range (max {MAX_IMMEDIATE})", line, token=token)
+    max_immediate: int = (1 << PARAM_SIZE[type]) - 1
+    if not (0 <= val <= max_immediate):
+        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} out of range (max {max_immediate})", line, token=token)
 
     return val
 
@@ -84,8 +84,9 @@ def parse_address(token: str, labels: dict[str, int], line: int) -> int:
         except ValueError:
             raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
-    if not (0 <= val <= MAX_ADDRESS):
-        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {MAX_ADDRESS})", line, token=token)
+    max_address: int = (1 << PARAM_SIZE["addr"]) - 1
+    if not (0 <= val <= max_address):
+        raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", line, token=token)
 
     return val
 
@@ -144,18 +145,18 @@ def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int | None:
 
         for param, ptype in zip(params, instr_info["params"]):
             match ptype:
-                case "register":
+                case "reg":
                     reg_num = parse_register(param, line_no)
-                    binary = (binary << PARAM_SIZE["register"]) | reg_num
-                    instruction_length += PARAM_SIZE["register"]
-                case "immediate":
-                    value = parse_immediate(param, line_no)
-                    binary = (binary << PARAM_SIZE["immediate"]) | value
-                    instruction_length += PARAM_SIZE["immediate"]
-                case "address":
+                    binary = (binary << PARAM_SIZE["reg"]) | reg_num
+                    instruction_length += PARAM_SIZE["reg"]
+                case "imm4" | "imm8" | "imm10":
+                    value = parse_immediate(ptype, param, line_no)
+                    binary = (binary << PARAM_SIZE[ptype]) | value
+                    instruction_length += PARAM_SIZE[ptype]
+                case "addr":
                     addr = parse_address(param, labels, line_no)
-                    binary = (binary << PARAM_SIZE["address"]) | addr
-                    instruction_length += PARAM_SIZE["address"]
+                    binary = (binary << PARAM_SIZE["addr"]) | addr
+                    instruction_length += PARAM_SIZE["addr"]
 
         binary <<= INSTRUCTION_SIZE - instruction_length
 
