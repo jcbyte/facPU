@@ -31,8 +31,8 @@ start:
   LI R1 2
   LD R2 d
   POW R0 R1 R2
-  loop: SUBI R0 R0 1
-  BEQI R0 0 start
+  loop: SUB R0 R0 1
+  BEQ R0 0 start
   JMP loop
 
 d: DAT 10

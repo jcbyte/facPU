@@ -3,6 +3,24 @@ from typing import Callable
 
 from colored import Style
 
+ALIASED_INSTRUCTIONS = {
+    "BEQ": ["BEQ/R", "BEQ/I"],
+    "BNE": ["BNE/R", "BNE/I"],
+    "BLT": ["BLT/R", "BLT/I"],
+    "BGT": ["BGT/R", "BGT/I"],
+    "ADD": ["ADD/R", "ADD/I"],
+    "SUB": ["SUB/R", "SUB/I"],
+    "MUL": ["MUL/R", "MUL/I"],
+    "DIV": ["DIV/R", "DIV/I"],
+    "MOD": ["MOD/R", "MOD/I"],
+    "POW": ["POW/R", "POW/I"],
+    "SHL": ["SHL/R", "SHL/I"],
+    "SHR": ["SHR/R", "SHR/I"],
+    "AND": ["AND/R", "AND/I"],
+    "OR ": ["OR /R", "OR /I"],
+    "XOR": ["XOR/R", "XOR/I"],
+}
+
 
 class PseudoInstruction:
     def __init__(self, func: Callable[..., int]) -> None:

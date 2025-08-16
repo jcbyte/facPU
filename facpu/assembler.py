@@ -3,7 +3,8 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from .assembler_instructions import (ASSEMBLER_PSEUDO_INSTRUCTIONS,
+from .assembler_instructions import (ALIASED_INSTRUCTIONS,
+                                     ASSEMBLER_PSEUDO_INSTRUCTIONS,
                                      PseudoInstruction)
 from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
                                   PARAM_SIZE, InstructionInfo, ParamType)
@@ -114,21 +115,46 @@ def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]
             if not clean_line:
                 continue
 
+        def detect_param_type(param: str) -> set[ParamType]:
+            if param.strip().startswith("R"):
+                return {"reg"}
+            else:
+                return {"imm4", "imm8", "imm10", "addr"}
+
+        def resolve_instr_alias(instr: str, params: list[str]) -> str | None:
+            for possible_instr in ALIASED_INSTRUCTIONS[instr]:
+                possible_instr_info = INSTRUCTIONS[possible_instr]
+
+                if len(possible_instr_info["params"]) != len(params):
+                    continue
+
+                if all(possible_instr_param in detect_param_type(our_param) for our_param, possible_instr_param in zip(params, possible_instr_info["params"])):
+                    return possible_instr
+
+            return None
+
+        instr, params = split_line(clean_line)
+        if instr in ALIASED_INSTRUCTIONS:
+            real_instr = resolve_instr_alias(instr, params)
+            if real_instr is None:
+                raise AssemblyError(f"Instruction {instr} with these parameters cannot be aliased to one of \n{"\n".join([f"  {possible_instr} - {", ".join(INSTRUCTIONS[possible_instr]["params"])}" for possible_instr in ALIASED_INSTRUCTIONS[instr]])}", i)
+            clean_line = ",".join([real_instr, *params])
+
         processed_lines.append((i, clean_line))
         address += 1
 
     return processed_lines, labels
 
 
-def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int | None:
-    line_no, content = line
-
-    if not line:
-        return None
-
+def split_line(content: str) -> tuple[str, list[str]]:
     parts = re.split(r"[,\s]+", content)
-    instr = parts[0]
-    params = parts[1:]
+    instr, *params = parts
+    return instr, params
+
+
+def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int:
+    line_no, content = line
+    instr, params = split_line(content)
 
     instr_info = parse_op(instr, line_no)
     is_pseudo_instr = isinstance(instr_info, PseudoInstruction)
@@ -176,8 +202,7 @@ def assemble(file: Path) -> list[int]:
         machine_code: list[int] = []
         for line in processed_lines:
             binary = assemble_line(line, labels)
-            if binary is not None:
-                machine_code.append(binary)
+            machine_code.append(binary)
 
     except AssemblyError as e:
         raise Exception(e.format_error(lines))
