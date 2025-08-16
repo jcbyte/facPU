@@ -56,4 +56,14 @@ INSTRUCTIONS: dict[str, InstructionInfo] = {
     "AND/I": {"opcode": 0b0111000, "params": ["reg", "reg", "imm10"]},
     "ORI/": {"opcode": 0b0111001, "params": ["reg", "reg", "imm10"]},
     "XOR/I": {"opcode": 0b0111010, "params": ["reg", "reg", "imm10"]},
+    # Graphics
+    "GDS/II": {"opcode": 0b1000000, "params": ["imm4", "imm4", "imm4", "imm4", "imm8"]},
+    "GDS/IR": {"opcode": 0b1000001, "params": ["imm4", "imm4", "imm4", "imm4", "reg"]},
+    "GDS/RI": {"opcode": 0b1000010, "params": ["reg", "reg", "reg", "reg", "imm8"]},
+    "GDS/RR": {"opcode": 0b1000011, "params": ["reg", "reg", "reg", "reg", "reg"]},
+    "GDSA/II": {"opcode": 0b1000100, "params": ["imm4", "imm4", "imm4", "imm4", "imm8"]},
+    "GDSA/IR": {"opcode": 0b1000101, "params": ["imm4", "imm4", "imm4", "imm4", "reg"]},
+    "GDSA/RI": {"opcode": 0b1000110, "params": ["reg", "reg", "reg", "reg", "imm8"]},
+    "GDSA/RR": {"opcode": 0b1000111, "params": ["reg", "reg", "reg", "reg", "reg"]},
+    "GSWP": {"opcode": 0b1001000, "params": []},
 }

@@ -19,6 +19,7 @@ ALIASED_INSTRUCTIONS = {
     "AND": ["AND/R", "AND/I"],
     "OR ": ["OR /R", "OR /I"],
     "XOR": ["XOR/R", "XOR/I"],
+    "GDS": ["GDS/II", "GDS/IR", "GDS/RI", "GDS/RR"],
 }
 
 
