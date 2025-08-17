@@ -8,6 +8,7 @@ from .assembler_instructions import (ALIASED_INSTRUCTIONS,
                                      PseudoInstruction)
 from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
                                   PARAM_SIZE, InstructionInfo, ParamType)
+from .macros import MACROS, UserMacroRegistry
 
 
 class AssemblyError(Exception):
@@ -35,6 +36,128 @@ class AssemblyError(Exception):
             + (f"  {self.line + 1 + 1}: {lines[self.line + 1].strip()}\n" if self.line < len(lines) - 1 else "")
             + f"{Fore.red}{self}{Style.reset}\n"
         )
+
+
+def parse_macros(line: str, line_no: int) -> str:
+    i = 0
+    n = len(line)
+    result = ""
+
+    while i < n:
+        if line[i] == "#":
+            # Start of macro
+
+            j = i + 1
+            # Get macro name (letters, digits, underscore)
+            while j < n and (line[j].isalnum() or line[j] == "_"):
+                j += 1
+            macro_name = line[i + 1 : j]
+            arg_str = ""
+
+            if j < n and line[j] == "(":
+                # If macro has parentheses
+                depth = 1
+                k = j + 1
+                # Skip over embedded macros and only return on the correct depth
+                while k < n and depth > 0:
+                    if line[k] == "(":
+                        depth += 1
+                    elif line[k] == ")":
+                        depth -= 1
+                    k += 1
+
+                args_text = line[j + 1 : k - 1]  # Content inside parentheses
+
+                # Recursively parse arguments
+                arg_str = parse_macros(args_text, line_no)
+
+                i = k
+            else:
+                # If macro does not have parentheses
+                i = j
+
+            # Replace macro with called macro function
+            args = [arg.strip() for arg in arg_str.split(",") if arg.strip()]
+            if macro_name in MACROS:
+                resolved_macro = MACROS[macro_name].func(args, line_no)
+            elif macro_name in UserMacroRegistry.macros:
+                resolved_macro = UserMacroRegistry.macros[macro_name]
+            else:
+                raise AssemblyError(f"Macro {Style.underline}{macro_name}{Style.res_underline} unknown", line_no, token=f"#{macro_name}")
+
+            result += resolved_macro
+        else:
+            # If not macro just write back line character
+            result += line[i]
+            i += 1
+
+    return result
+
+
+def detect_param_type(param: str) -> set[ParamType]:
+    if param.strip().startswith("R"):
+        return {"reg"}
+    else:
+        return {"imm4", "imm8", "imm10", "addr"}
+
+
+def resolve_instr_alias(instr: str, params: list[str]) -> str | None:
+    for possible_instr in ALIASED_INSTRUCTIONS[instr]:
+        possible_instr_info = INSTRUCTIONS[possible_instr]
+
+        if len(possible_instr_info["params"]) != len(params):
+            continue
+
+        if all(possible_instr_param in detect_param_type(our_param) for our_param, possible_instr_param in zip(params, possible_instr_info["params"])):
+            return possible_instr
+
+    return None
+
+
+# removes comments
+# identifies and removes labels
+# parses macros
+# aliases commands
+def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]:
+    processed_lines: list[tuple[int, str]] = []
+    address: int = 0
+    labels: dict[str, int] = {}
+    for i, line in enumerate(lines):
+        clean_line = line.split(";")[0].strip()  # remove comments
+
+        found_labels = re.findall(r"([^\s]+):", clean_line)
+        if found_labels:
+            for label in found_labels:
+                if label in labels:
+                    raise AssemblyError(f"Duplicate label {Style.underline}{label}{Style.res_underline} found", i, token=label)
+                labels.update({label: address})
+            clean_line = re.sub(r"[^\s]+:", "", clean_line).strip()
+
+        clean_line = parse_macros(clean_line, i)
+
+        instr, params = split_line(clean_line)
+        if instr in ALIASED_INSTRUCTIONS:
+            real_instr = resolve_instr_alias(instr, params)
+            if real_instr is None:
+                raise AssemblyError(
+                    f"Instruction {instr} with these parameters cannot be aliased to one of \n{"\n".join([f"  {possible_instr} - {", ".join(INSTRUCTIONS[possible_instr]["params"])}" for possible_instr in ALIASED_INSTRUCTIONS[instr]])}",
+                    i,
+                )
+            clean_line = ",".join([real_instr, *params])
+
+        if not clean_line:
+            continue
+
+        processed_lines.append((i, clean_line))
+        address += 1
+
+    return processed_lines, labels
+
+
+def split_line(content: str) -> tuple[str, list[str]]:
+    parts = re.split(r"[,\s]+", content)
+    instr, *params = parts
+    return instr, params
 
 
 def parse_op(token: str, line: int) -> InstructionInfo | PseudoInstruction:
@@ -90,67 +213,6 @@ def parse_address(token: str, labels: dict[str, int], line: int) -> int:
         raise AssemblyError(f"Address {Style.underline}{token}{Style.res_underline} out of range (max {max_address})", line, token=token)
 
     return val
-
-
-# removes comments
-# identifies and removes labels
-# aliases commands
-def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]:
-    processed_lines: list[tuple[int, str]] = []
-    address: int = 0
-    labels: dict[str, int] = {}
-    for i, line in enumerate(lines):
-        clean_line = line.split(";")[0].strip()  # remove comments
-
-        if not clean_line:
-            continue
-
-        found_labels = re.findall(r"([^\s]+):", clean_line)
-        if found_labels:
-            for label in found_labels:
-                if label in labels:
-                    raise AssemblyError(f"Duplicate label {Style.underline}{label}{Style.res_underline} found", i, token=label)
-                labels.update({label: address})
-            clean_line = re.sub(r"[^\s]+:", "", clean_line).strip()
-
-            if not clean_line:
-                continue
-
-        def detect_param_type(param: str) -> set[ParamType]:
-            if param.strip().startswith("R"):
-                return {"reg"}
-            else:
-                return {"imm4", "imm8", "imm10", "addr"}
-
-        def resolve_instr_alias(instr: str, params: list[str]) -> str | None:
-            for possible_instr in ALIASED_INSTRUCTIONS[instr]:
-                possible_instr_info = INSTRUCTIONS[possible_instr]
-
-                if len(possible_instr_info["params"]) != len(params):
-                    continue
-
-                if all(possible_instr_param in detect_param_type(our_param) for our_param, possible_instr_param in zip(params, possible_instr_info["params"])):
-                    return possible_instr
-
-            return None
-
-        instr, params = split_line(clean_line)
-        if instr in ALIASED_INSTRUCTIONS:
-            real_instr = resolve_instr_alias(instr, params)
-            if real_instr is None:
-                raise AssemblyError(f"Instruction {instr} with these parameters cannot be aliased to one of \n{"\n".join([f"  {possible_instr} - {", ".join(INSTRUCTIONS[possible_instr]["params"])}" for possible_instr in ALIASED_INSTRUCTIONS[instr]])}", i)
-            clean_line = ",".join([real_instr, *params])
-
-        processed_lines.append((i, clean_line))
-        address += 1
-
-    return processed_lines, labels
-
-
-def split_line(content: str) -> tuple[str, list[str]]:
-    parts = re.split(r"[,\s]+", content)
-    instr, *params = parts
-    return instr, params
 
 
 def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int:
