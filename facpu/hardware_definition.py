@@ -33,7 +33,7 @@ INSTRUCTIONS: dict[str, InstructionInfo] = {
     "BGT/I": {"opcode": 0b0011000, "params": ["reg", "imm10", "addr"]},
     "CALL": {"opcode": 0b0011001, "params": ["addr"]},
     "RET": {"opcode": 0b0011010, "params": []},
-    # CPU - ALU
+    # ALU
     "ADD/R": {"opcode": 0b0100000, "params": ["reg", "reg", "reg"]},
     "SUB/R": {"opcode": 0b0100001, "params": ["reg", "reg", "reg"]},
     "MUL/R": {"opcode": 0b0100010, "params": ["reg", "reg", "reg"]},

@@ -1,6 +1,6 @@
 # facPU
 
-Factorio CPU - A single threaded ~1Hz 31-bit CPU fully implemented inside factorio.  
+Factorio CPU - A single threaded ~14Hz 31-bit CPU fully implemented inside factorio.  
 Including a corresponding assembler, allowing you to write and flash custom programs directly into the game.
 
 This repository provides everything you need to use, build, and program the CPU.
