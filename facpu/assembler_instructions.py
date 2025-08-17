@@ -19,8 +19,7 @@ ALIASED_INSTRUCTIONS = {
     "AND": ["AND/R", "AND/I"],
     "OR ": ["OR /R", "OR /I"],
     "XOR": ["XOR/R", "XOR/I"],
-    "GDS": ["GDS/II", "GDS/IR", "GDS/RI", "GDS/RR"],
-    "GDSA": ["GDSA/II", "GDSA/IR", "GDSA/RI", "GDSA/RR"],
+    "GDS": ["GDS/III", "GDS/IIR", "GDS/IRI", "GDS/IRR", "GDS/RII", "GDS/RIR", "GDS/RRI", "GDS/RRR"],
 }
 
 
@@ -32,7 +31,7 @@ class PseudoInstruction:
         sig = inspect.signature(self.func)
         params = sig.parameters
         # ignore line, as this is not passed from the assembly code
-        return len(params) - (1 if "line" in params else 0)
+        return len(params) - (1 if "line_no" in params else 0)
 
 
 def data_instr(data: str, line_no: int) -> int:

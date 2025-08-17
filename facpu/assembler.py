@@ -3,8 +3,11 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from .assembler_instructions import ALIASED_INSTRUCTIONS, ASSEMBLER_PSEUDO_INSTRUCTIONS, PseudoInstruction
-from .hardware_definition import INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE, PARAM_SIZE, InstructionInfo, ParamType
+from .assembler_instructions import (ALIASED_INSTRUCTIONS,
+                                     ASSEMBLER_PSEUDO_INSTRUCTIONS,
+                                     PseudoInstruction)
+from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
+                                  PARAM_SIZE, InstructionInfo, ParamType)
 from .macros import MACROS, UserMacroRegistry
 
 
@@ -188,11 +191,14 @@ def parse_register(token: str, line: int) -> int:
     return reg_num
 
 
-def parse_immediate(type: ParamType, token: str, line: int) -> int:
-    try:
-        val = int(token, 0)  # auto-detect binary/hex
-    except ValueError:
-        raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
+def parse_immediate(type: ParamType, token: str, labels: dict[str, int], line: int) -> int:
+    val = labels.get(token)
+    
+    if val is None:
+      try:
+          val = int(token, 0)  # auto-detect binary/hex
+      except ValueError:
+          raise AssemblyError(f"Immediate value {Style.underline}{token}{Style.res_underline} has invalid syntax", line, token=token)
 
     max_immediate: int = (1 << PARAM_SIZE[type]) - 1
     if not (0 <= val <= max_immediate):
@@ -241,7 +247,7 @@ def assemble_line(line: tuple[int, str], labels: dict[str, int]) -> int:
                     binary = (binary << PARAM_SIZE["reg"]) | reg_num
                     instruction_length += PARAM_SIZE["reg"]
                 case "imm4" | "imm8" | "imm10":
-                    value = parse_immediate(ptype, param, line_no)
+                    value = parse_immediate(ptype, param, labels, line_no)
                     binary = (binary << PARAM_SIZE[ptype]) | value
                     instruction_length += PARAM_SIZE[ptype]
                 case "addr":
