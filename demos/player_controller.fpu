@@ -1,0 +1,37 @@
+#define(BLACK, #col(000000))
+#define(CYAN, #col(00ffff))
+#define(CLEAR, GDS 0 0 15 15 #BLACK)
+
+LI R0 7 ; x pos
+LI R1 7 ; y pos
+
+JMP draw
+
+gameloop:
+  KRD R3
+  ; jump to handle inputs
+  BEQ R3 128 up
+  BEQ R3 129 down
+  BEQ R3 130 right
+  BEQ R3 131 left
+  JMP gameloop ; if no input rescan for input
+
+  up:
+    SUB R1 R1 1
+    JMP draw
+  down:
+    ADD R1 R1 1
+    JMP draw
+  right:
+    ADD R0 R0 1
+    JMP draw
+  left:
+    SUB R0 R0 1
+    JMP draw
+
+draw:
+  #CLEAR ; clear old pixels
+  GDS R0 R1 1 1 #CYAN ; draw player
+  GSWP
+
+  JMP gameloop
