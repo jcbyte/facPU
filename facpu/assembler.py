@@ -17,8 +17,6 @@ class AssemblyError(Exception):
     def format_error(self, lines) -> str:
         error_line = lines[self.line].strip()
 
-        print(error_line, self.token)
-
         token_index = error_line.find(self.token) if self.token else -1
         if token_index >= 0:
             assert self.token is not None  # for python type checker
@@ -83,7 +81,7 @@ def parse_macros(line: str, line_no: int) -> str:
             if macro_name in MACROS:
                 resolved_macro = MACROS[macro_name].func(args, line_no)
             elif macro_name in UserMacroRegistry.macros:
-                resolved_macro = UserMacroRegistry.macros[macro_name]
+                resolved_macro = UserMacroRegistry.apply_macro(macro_name, args, line_no)
             else:
                 raise AssemblyError(f"Macro {Style.underline}{macro_name}{Style.res_underline} unknown", line_no, token=f"#{macro_name}")
 
@@ -265,8 +263,6 @@ def assemble(file: Path) -> list[int]:
 
     try:
         processed_lines, labels = preprocess(lines)
-
-        print(lines, processed_lines)
 
         machine_code: list[int] = []
         for line in processed_lines:

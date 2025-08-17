@@ -50,6 +50,23 @@ def col_macro(args: list[str], line_no: int) -> str:
 class UserMacroRegistry:
     macros: dict[str, str] = {}
 
+    @staticmethod
+    def apply_macro(macro:str, args:list[str], line_no:int) -> str:
+        from .assembler import AssemblyError
+        
+        macro_str = UserMacroRegistry.macros.get(macro, "")
+
+        def replacer(match: re.Match) -> str:
+          index = int(match.group(1)) - 1  # $1 -> args[0]
+
+          try:
+              return str(args[index])
+          except IndexError:
+              raise AssemblyError(f"Defined macro {Style.underline}{macro}{Style.res_underline} requires at least {index + 1} params, but got {len(args)}", line_no)
+      
+        return re.sub(r"\$(\d+)", replacer, macro_str)
+
+
 
 def define_macro(args: list[str], line_no: int) -> str:
     from .assembler import AssemblyError
