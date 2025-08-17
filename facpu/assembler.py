@@ -3,11 +3,8 @@ from pathlib import Path
 
 from colored import Fore, Style
 
-from .assembler_instructions import (ALIASED_INSTRUCTIONS,
-                                     ASSEMBLER_PSEUDO_INSTRUCTIONS,
-                                     PseudoInstruction)
-from .hardware_definition import (INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE,
-                                  PARAM_SIZE, InstructionInfo, ParamType)
+from .assembler_instructions import ALIASED_INSTRUCTIONS, ASSEMBLER_PSEUDO_INSTRUCTIONS, PseudoInstruction
+from .hardware_definition import INSTRUCTION_SIZE, INSTRUCTIONS, OPCODE_SIZE, PARAM_SIZE, InstructionInfo, ParamType
 from .macros import MACROS, UserMacroRegistry
 
 
@@ -19,8 +16,13 @@ class AssemblyError(Exception):
 
     def format_error(self, lines) -> str:
         error_line = lines[self.line].strip()
-        if self.token:
-            token_index = error_line.find(self.token)
+
+        print(error_line, self.token)
+
+        token_index = error_line.find(self.token) if self.token else -1
+        if token_index >= 0:
+            assert self.token is not None  # for python type checker
+
             error_line = (
                 f"{error_line[:token_index]}"
                 f"{Style.underline}{error_line[token_index:token_index+len(self.token)]}{Style.res_underline}"
@@ -114,17 +116,16 @@ def resolve_instr_alias(instr: str, params: list[str]) -> str | None:
     return None
 
 
-# removes comments
-# identifies and removes labels
-# parses macros
-# aliases commands
 def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]:
     processed_lines: list[tuple[int, str]] = []
     address: int = 0
     labels: dict[str, int] = {}
-    for i, line in enumerate(lines):
-        clean_line = line.split(";")[0].strip()  # remove comments
 
+    for i, line in enumerate(lines):
+        # Remove comments
+        clean_line = line.split(";")[0].strip()
+
+        # Identify and remove labels
         found_labels = re.findall(r"([^\s]+):", clean_line)
         if found_labels:
             for label in found_labels:
@@ -133,8 +134,10 @@ def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]
                 labels.update({label: address})
             clean_line = re.sub(r"[^\s]+:", "", clean_line).strip()
 
+        # Parse Macros
         clean_line = parse_macros(clean_line, i)
 
+        # Alias commands
         instr, params = split_line(clean_line)
         if instr in ALIASED_INSTRUCTIONS:
             real_instr = resolve_instr_alias(instr, params)
@@ -145,6 +148,7 @@ def preprocess(lines: list[str]) -> tuple[list[tuple[int, str]], dict[str, int]]
                 )
             clean_line = ",".join([real_instr, *params])
 
+        # Remove empty lines
         if not clean_line:
             continue
 
@@ -261,6 +265,8 @@ def assemble(file: Path) -> list[int]:
 
     try:
         processed_lines, labels = preprocess(lines)
+
+        print(lines, processed_lines)
 
         machine_code: list[int] = []
         for line in processed_lines:
