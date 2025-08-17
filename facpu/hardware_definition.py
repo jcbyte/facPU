@@ -66,4 +66,7 @@ INSTRUCTIONS: dict[str, InstructionInfo] = {
     "GDSA/RI": {"opcode": 0b1000110, "params": ["reg", "reg", "reg", "reg", "imm8"]},
     "GDSA/RR": {"opcode": 0b1000111, "params": ["reg", "reg", "reg", "reg", "reg"]},
     "GSWP": {"opcode": 0b1001000, "params": []},
+    # Keyboard
+    "KRD": {"opcode": 0b1010000, "params": ["reg"]},
+    "KRDP": {"opcode": 0b1010001, "params": ["reg"]},
 }
