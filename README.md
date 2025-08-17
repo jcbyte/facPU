@@ -5,8 +5,6 @@ Including a corresponding assembler, allowing you to write and flash custom prog
 
 This repository provides everything you need to use, build, and program the CPU.
 
-
-
 ## Hardware Specifications
 
 - **Registers:** 16 general-purpose 31-bit registers
@@ -39,10 +37,12 @@ This repository provides everything you need to use, build, and program the CPU.
 - Import the blueprint from [blueprint.txt](/factorio_resources/blueprint.txt), **or**  
 - Download my world from [facPU.zip](/factorio_resources/facPU.zip).  
 
-For better performance, increase tick speed in the Factorio console:
-```lua
-/c game.speed = 25
-```
+### Extra Notes
+
+> Setting the **"Toggle Entity"** keybind to **"F"** lets you **activate combinators and pushbuttons** by pressing F while hovering on them.
+
+For better performance, increase tick speed in the Factorio console:  
+`/c game.speed = 25`  
 _(25 is stable on my systems, but you can experiment.)_
 
 I would recommend disabling clouds for smoother rendering **→ Settings → Graphics → Show clouds (off)**.
