@@ -14,7 +14,7 @@ setup(
     install_requires=["colored", "pyperclip", "factorio-draftsman"],
     author="Joel Cutler",
     description="facPU assembler",
-    long_description=(Path(__file__).parent / "README.md").read_text(),
+    long_description=(Path(__file__).parent / "README.md").read_text("utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/jcbyte/facPU",
     python_requires=">=3.6",
