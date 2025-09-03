@@ -1,0 +1,192 @@
+#define(FILL, GDS 0 0 15 15 $1)
+#define(ADDA, ADD $1 $1 $2)
+#define(SUBA, SUB $1 $1 $2)
+
+; define constant register variables 
+#define(BALL_X, R0)
+#define(BALL_Y, R1)
+#define(BALL_X_VEL, R2)
+#define(BALL_Y_VEL, R3)
+#define(PLAYER_POS, R4)
+
+LI #BALL_X 7
+LI #BALL_Y 7
+LI #BALL_X_VEL 1
+#SUBA(#BALL_X_VEL, 2) ; start at -1
+LI #BALL_Y_VEL 1
+LI #PLAYER_POS 2 
+
+JMP draw
+
+input:
+  KRD R8
+  BEQ R8 0 gameloop ; if no input skip checking inputs
+  ; jump to handle inputs
+  BEQ R8 128 up
+  BEQ R8 129 down
+  JMP gameloop ; do nothing if input invalid
+
+  up:
+    #SUBA(#PLAYER_POS, 1)
+    JMP gameloop
+  down:
+    #ADDA(#PLAYER_POS, 1)
+    ; JMP gameloop
+
+gameloop:
+  BEQ #BALL_X 1 left_collision
+  BEQ #BALL_X 13 right_collision
+  JMP gameloop2
+
+  left_collision:
+    LI #BALL_X_VEL 1
+    JMP gameloop2
+
+  right_collision:
+    ; check if player bounces
+    SUB R9 #PLAYER_POS 1 ; if BALL_Y < PLAYER_POS - 1
+    BLT #BALL_Y R9 lose
+
+    ADD R9 #PLAYER_POS 3 ; if BALL_Y > PLAYER_POS + 3
+    BGT #BALL_Y R9 lose
+
+    #SUBA(#BALL_X_VEL, 2) ; set BALL_X_VEL to -1
+    ; JMP gameloop2
+  
+gameloop2:
+  BEQ #BALL_Y 0 top_collision
+  BEQ #BALL_Y 14 bottom_collision
+  JMP gameloop3
+
+  top_collision:
+    LI #BALL_Y_VEL 1
+    JMP gameloop3
+
+  bottom_collision:
+    #SUBA(#BALL_Y_VEL, 2) ; set BALL_Y_VEL to -1
+    ; JMP gameloop3
+
+gameloop3:
+  #ADDA(#BALL_X, #BALL_X_VEL)
+  #ADDA(#BALL_Y, #BALL_Y_VEL)
+  ; JMP draw
+
+#define(P1_COL, #col(3399FF))
+#define(P2_COL, #col(FF9933))
+#define(BALL_COL, #col(FFFFFF))
+
+draw:
+  #FILL(#col(000000)) ; clear old pixels
+  LI R15 15
+  GDS R15 #PLAYER_POS 0 3 #P1_COL ; draw player
+  SUB R14 #BALL_Y 1 ; so it is centered
+  LI R15 0
+  GDS R15 R14 0 3 #P2_COL ; draw computer (it will always win)
+  GDS #BALL_X #BALL_Y 1 1 #BALL_COL ; draw ball
+  GSWP
+
+  JMP input
+
+#define(TEXT_COL, #col(ffffff))
+
+lose:
+  #FILL(#col(910000))
+
+  ; Write "GAM OVER"
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+  ; ¬####¬¬#¬¬¬#¬#¬¬
+  ; ¬#¬¬¬¬#¬#¬#¬#¬#¬
+  ; ¬#¬##¬###¬#¬¬¬#¬
+  ; ¬#¬¬#¬#¬#¬#¬¬¬#¬
+  ; ¬####¬#¬#¬#¬¬¬#¬
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+  ; ¬###¬#¬#¬##¬###¬
+  ; ¬#¬#¬#¬#¬#¬¬#¬#¬
+  ; ¬#¬#¬#¬#¬##¬###¬
+  ; ¬#¬#¬#¬#¬#¬¬##¬¬
+  ; ¬###¬¬#¬¬##¬#¬#¬
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+  ; ¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬
+
+  GDS 1 2 0 0 #TEXT_COL
+  GDS 2 2 0 0 #TEXT_COL
+  GDS 3 2 0 0 #TEXT_COL
+  GDS 4 2 0 0 #TEXT_COL
+  GDS 7 2 0 0 #TEXT_COL
+  GDS 11 2 0 0 #TEXT_COL
+  GDS 13 2 0 0 #TEXT_COL
+  GDS 1 3 0 0 #TEXT_COL
+  GDS 6 3 0 0 #TEXT_COL
+  GDS 8 3 0 0 #TEXT_COL
+  GDS 10 3 0 0 #TEXT_COL
+  GDS 12 3 0 0 #TEXT_COL
+  GDS 14 3 0 0 #TEXT_COL
+  GDS 1 4 0 0 #TEXT_COL
+  GDS 3 4 0 0 #TEXT_COL
+  GDS 4 4 0 0 #TEXT_COL
+  GDS 6 4 0 0 #TEXT_COL
+  GDS 7 4 0 0 #TEXT_COL
+  GDS 8 4 0 0 #TEXT_COL
+  GDS 10 4 0 0 #TEXT_COL
+  GDS 14 4 0 0 #TEXT_COL
+  GDS 1 5 0 0 #TEXT_COL
+  GDS 4 5 0 0 #TEXT_COL
+  GDS 6 5 0 0 #TEXT_COL
+  GDS 8 5 0 0 #TEXT_COL
+  GDS 10 5 0 0 #TEXT_COL
+  GDS 14 5 0 0 #TEXT_COL
+  GDS 1 6 0 0 #TEXT_COL
+  GDS 2 6 0 0 #TEXT_COL
+  GDS 3 6 0 0 #TEXT_COL
+  GDS 4 6 0 0 #TEXT_COL
+  GDS 6 6 0 0 #TEXT_COL
+  GDS 8 6 0 0 #TEXT_COL
+  GDS 10 6 0 0 #TEXT_COL
+  GDS 14 6 0 0 #TEXT_COL
+  GDS 1 9 0 0 #TEXT_COL
+  GDS 2 9 0 0 #TEXT_COL
+  GDS 3 9 0 0 #TEXT_COL
+  GDS 5 9 0 0 #TEXT_COL
+  GDS 7 9 0 0 #TEXT_COL
+  GDS 9 9 0 0 #TEXT_COL
+  GDS 10 9 0 0 #TEXT_COL
+  GDS 12 9 0 0 #TEXT_COL
+  GDS 13 9 0 0 #TEXT_COL
+  GDS 14 9 0 0 #TEXT_COL
+  GDS 1 10 0 0 #TEXT_COL
+  GDS 3 10 0 0 #TEXT_COL
+  GDS 5 10 0 0 #TEXT_COL
+  GDS 7 10 0 0 #TEXT_COL
+  GDS 9 10 0 0 #TEXT_COL
+  GDS 12 10 0 0 #TEXT_COL
+  GDS 13 11 0 0 #TEXT_COL
+  GDS 1 11 0 0 #TEXT_COL
+  GDS 3 11 0 0 #TEXT_COL
+  GDS 5 11 0 0 #TEXT_COL
+  GDS 7 11 0 0 #TEXT_COL
+  GDS 9 11 0 0 #TEXT_COL
+  GDS 10 11 0 0 #TEXT_COL
+  GDS 12 11 0 0 #TEXT_COL
+  GDS 13 11 0 0 #TEXT_COL
+  GDS 1 12 0 0 #TEXT_COL
+  GDS 3 12 0 0 #TEXT_COL
+  GDS 5 12 0 0 #TEXT_COL
+  GDS 7 12 0 0 #TEXT_COL
+  GDS 9 12 0 0 #TEXT_COL
+  GDS 12 12 0 0 #TEXT_COL
+  GDS 1 13 0 0 #TEXT_COL
+  GDS 2 13 0 0 #TEXT_COL
+  GDS 3 13 0 0 #TEXT_COL
+  GDS 6 13 0 0 #TEXT_COL
+  GDS 9 13 0 0 #TEXT_COL
+  GDS 10 13 0 0 #TEXT_COL
+  GDS 12 13 0 0 #TEXT_COL
+  GDS 14 13 0 0 #TEXT_COL
+  GDS 14 11 0 0 #TEXT_COL
+  GDS 13 12 0 0 #TEXT_COL
+  GDS 14 10 0 0 #TEXT_COL
+
+  GSWP
+  HLT

@@ -2,19 +2,20 @@
 #define(CYAN, #col(00ffff))
 #define(CLEAR, GDS 0 0 15 15 #BLACK)
 
-LI R0 7 ; x pos
-LI R1 7 ; y pos
+LI R0 7
+LI R1 7
 
 JMP draw
 
 gameloop:
   KRD R3
+  BEQ R3 0 gameloop  ; if no input shortcut back to rescan for input
   ; jump to handle inputs
   BEQ R3 128 up
   BEQ R3 129 down
   BEQ R3 130 right
   BEQ R3 131 left
-  JMP gameloop ; if no input rescan for input
+  JMP gameloop ; do nothing if input invalid
 
   up:
     SUB R1 R1 1
