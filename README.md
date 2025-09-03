@@ -19,23 +19,24 @@ This repository provides everything you need to use, build, and program the CPU.
 ### 1. Factorio Setup
 
 #### Required Mods
-- Space Age  
-- [Circuit Wire Poles](https://mods.factorio.com/mod/circuit-wire-poles)  
-- [Electric Pole Range Multiplier](https://mods.factorio.com/mod/ElectricPoleRangeMultiplier) *(set “Range factor” to **10**)*  
-- [Global Power Network](https://mods.factorio.com/mod/global-power-network)  
-- [Pushbutton](https://mods.factorio.com/mod/pushbutton)  
-- [Text Plates](https://mods.factorio.com/mod/textplates)  
+
+- Space Age
+- [Circuit Wire Poles](https://mods.factorio.com/mod/circuit-wire-poles)
+- [Electric Pole Range Multiplier](https://mods.factorio.com/mod/ElectricPoleRangeMultiplier) _(set “Range factor” to **10**)_
+- [Global Power Network](https://mods.factorio.com/mod/global-power-network)
+- [Pushbutton](https://mods.factorio.com/mod/pushbutton)
+- [Text Plates](https://mods.factorio.com/mod/textplates)
 
 #### Recommended Mods
 
-- [Instant Blueprint](https://mods.factorio.com/mod/InstantBP)  
-- [Clear Skies](https://mods.factorio.com/mod/ClearSkies)  
-- [Almost Invisible Electric Wires 2.0](https://mods.factorio.com/mod/AlmostInvisibleElectricWires2)  
+- [Instant Blueprint](https://mods.factorio.com/mod/InstantBP)
+- [Clear Skies](https://mods.factorio.com/mod/ClearSkies)
+- [Almost Invisible Electric Wires 2.0](https://mods.factorio.com/mod/AlmostInvisibleElectricWires2)
 
 #### Loading the CPU
 
-- Import the blueprint from [blueprint.txt](/factorio_resources/blueprint.txt), **or**  
-- Download my world from [facPU.zip](/factorio_resources/facPU.zip).  
+- Import the blueprint from [blueprint.txt](/factorio_resources/blueprint.txt), **or**
+- Download my world from [facPU.zip](/factorio_resources/facPU.zip).
 
 ### Extra Notes
 
@@ -51,7 +52,7 @@ I would recommend disabling clouds for smoother rendering **→ Settings → Gra
 
 1. Enable "BLANK ZERO" (bottom-left, near the clock).
 2. Paste the generated blueprint over the flasher combinators (bottom-right).
-    - Ensure the first instruction aligns with the first combinator.
+   - Ensure the first instruction aligns with the first combinator.
 3. Enable the combinator with a tick to flash the code into memory.
 4. Once flashing is complete, optionally disable "BLANK ZERO" for improved performance.
 
@@ -78,6 +79,7 @@ start:
   LI R1 2
   LD R2 d
   POW R0 R1 R2
+
   loop: SUB R0 R0 1
   BEQ R0 0 start
   JMP loop
@@ -85,7 +87,8 @@ start:
 d: DAT 10
 ```
 
-More examples can be found in [demos](/demos/).
+More examples can be found in [demos](/demos/).  
+Recommended starting point is [player_controller.fpu](/demos/player_controller.fpu), which shows a simple complete program.
 
 ## Licence
 
