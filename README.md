@@ -36,7 +36,7 @@ This repository provides everything you need to use, build, and program the CPU.
 #### Loading the CPU
 
 - Import the blueprint from [blueprint.txt](/factorio_resources/blueprint.txt), **or**
-- Download my world from [facPU.zip](/factorio_resources/facPU.zip).
+- Download my world from the [Releases](https://github.com/jcbyte/facPU/releases) page.
 
 ### Extra Notes
 
